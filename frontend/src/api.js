@@ -34,5 +34,8 @@ export const api = {
   getUsers: () => request('/users'),
   getUserProfile: (id) => request(`/users/${id}`),
   getUserPosts: (id) => request(`/users/${id}/posts`),
+  getFollowers: (id) => request(`/users/${id}/followers`),
+  getFollowing: (id) => request(`/users/${id}/following`),
+  markNotificationsRead: () => request('/notifications/mark-read', { method: 'PUT' }),
   updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) })
 };

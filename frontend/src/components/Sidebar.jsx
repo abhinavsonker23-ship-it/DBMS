@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Bell, MessageSquare, Bookmark, User, Edit3, LogOut } from 'lucide-react';
+import { Home, Bell, MessageSquare, Bookmark, User, Edit3, LogOut, Compass } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onLogout, onTabChange, currentUsername }) {
   const displayName = currentUsername || 'My Profile';
@@ -22,16 +22,28 @@ export default function Sidebar({ activeTab, onLogout, onTabChange, currentUsern
         >
           <Home size={20} /> Home
         </button>
-        <button className="nav-item">
-          Communities
+        <button 
+          className={`nav-item ${activeTab === 'communities' ? 'active' : ''}`}
+          onClick={() => onTabChange('communities')}
+        >
+          <Compass size={20} /> Communities
         </button>
-        <button className="nav-item">
+        <button 
+          className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
+          onClick={() => onTabChange('notifications')}
+        >
           <Bell size={20} /> Notifications
         </button>
-        <button className="nav-item">
+        <button 
+          className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
+          onClick={() => onTabChange('messages')}
+        >
           <MessageSquare size={20} /> Messages
         </button>
-        <button className="nav-item">
+        <button 
+          className={`nav-item ${activeTab === 'bookmarks' ? 'active' : ''}`}
+          onClick={() => onTabChange('bookmarks')}
+        >
           <Bookmark size={20} /> Bookmarks
         </button>
         <button 

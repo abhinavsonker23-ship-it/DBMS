@@ -164,10 +164,28 @@ app.delete('/users/:id/follow', authenticate, async (req, res) => {
 app.get('/notifications', authenticate, async (req, res) => {
     try {
         const [rows] = await pool.query(
-            'SELECT * FROM Notifications WHERE user_id = ? AND is_read = FALSE ORDER BY created_at DESC',
+            `SELECT n.notification_id, n.user_id, n.type, n.reference_id, n.is_read, n.created_at,
+                    p.content AS post_snippet
+             FROM Notifications n
+             LEFT JOIN Posts p ON p.post_id = n.reference_id
+             WHERE n.user_id = ?
+             ORDER BY n.created_at DESC LIMIT 30`,
             [req.user.id]
         );
         res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 8b. PUT /notifications/mark-read
+app.put('/notifications/mark-read', authenticate, async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE Notifications SET is_read = TRUE WHERE user_id = ?',
+            [req.user.id]
+        );
+        res.json({ message: 'All notifications marked as read' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -268,6 +286,42 @@ app.get('/users/:id/posts', async (req, res) => {
              JOIN Users u ON u.user_id = p.user_id
              WHERE p.user_id = ? AND p.is_deleted = FALSE
              ORDER BY p.created_at DESC`,
+            [targetUserId]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 13. GET /users/:id/followers (List of users following this user)
+app.get('/users/:id/followers', async (req, res) => {
+    const targetUserId = parseInt(req.params.id, 10);
+    try {
+        const [rows] = await pool.query(
+            `SELECT u.user_id, u.username, u.email, u.bio, f.created_at AS followed_at
+             FROM Follows f
+             JOIN Users u ON u.user_id = f.follower_id
+             WHERE f.following_id = ?
+             ORDER BY f.created_at DESC`,
+            [targetUserId]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 14. GET /users/:id/following (List of users followed by this user)
+app.get('/users/:id/following', async (req, res) => {
+    const targetUserId = parseInt(req.params.id, 10);
+    try {
+        const [rows] = await pool.query(
+            `SELECT u.user_id, u.username, u.email, u.bio, f.created_at AS followed_at
+             FROM Follows f
+             JOIN Users u ON u.user_id = f.following_id
+             WHERE f.follower_id = ?
+             ORDER BY f.created_at DESC`,
             [targetUserId]
         );
         res.json(rows);
