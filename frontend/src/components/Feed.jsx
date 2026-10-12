@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { ArrowUp, MessageSquare, Repeat, Bookmark, Share } from 'lucide-react';
 
-export default function Feed({ userId }) {
+export default function Feed({ userId, onOpenProfile }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,10 +49,27 @@ export default function Feed({ userId }) {
         return (
         <div key={post.post_id} className="post-card">
           <div className="post-header">
-            <img src={`https://ui-avatars.com/api/?name=${authorName}&background=random`} className="avatar" alt="Avatar" />
+            <img 
+              src={`https://ui-avatars.com/api/?name=${authorName}&background=random`} 
+              className="avatar avatar-clickable" 
+              alt="Avatar" 
+              onClick={() => onOpenProfile && onOpenProfile(post.user_id)}
+              title={`View ${authorName}'s profile`}
+            />
             <div className="post-meta">
-              <span className="post-author-name">{authorName} <span style={{ color: 'var(--accent-primary)' }}>&#10003;</span></span>
-              <span className="post-author-handle">@{authorName.toLowerCase().replace(/\s+/g, '_')} • {new Date(post.created_at).toLocaleDateString()}</span>
+              <span 
+                className="post-author-name author-clickable"
+                onClick={() => onOpenProfile && onOpenProfile(post.user_id)}
+                title={`View ${authorName}'s profile`}
+              >
+                {authorName} <span style={{ color: 'var(--accent-primary)' }}>&#10003;</span>
+              </span>
+              <span 
+                className="post-author-handle author-clickable"
+                onClick={() => onOpenProfile && onOpenProfile(post.user_id)}
+              >
+                @{authorName.toLowerCase().replace(/\s+/g, '_')} • {new Date(post.created_at).toLocaleDateString()}
+              </span>
             </div>
             <div style={{ marginLeft: 'auto', color: 'var(--text-secondary)' }}>
               ...

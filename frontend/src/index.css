@@ -440,3 +440,102 @@ button.secondary:hover {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
 }
+
+/* Profile View Styles */
+.profile-card {
+  background-color: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 1.5rem;
+}
+
+.profile-banner {
+  height: 140px;
+  background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #A855F7 100%);
+  position: relative;
+}
+
+.profile-body {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  position: relative;
+}
+
+.profile-avatar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: -45px;
+  margin-bottom: 1rem;
+}
+
+.profile-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid var(--bg-secondary);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  background-color: var(--bg-secondary);
+}
+
+.profile-stats-row {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin: 1.25rem 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Hanken Grotesk', sans-serif;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.mutual-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #EEF2FF;
+  color: var(--accent-primary);
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border: 1px solid #E0E7FF;
+}
+
+.author-clickable {
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.author-clickable:hover {
+  color: var(--accent-primary) !important;
+  text-decoration: underline;
+}
+
+.avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatar-clickable:hover {
+  transform: scale(1.06);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.25);
+}
+

@@ -30,5 +30,9 @@ export const api = {
   unlikePost: (id) => request(`/posts/${id}/like`, { method: 'DELETE' }),
   getNotifications: () => request('/notifications'),
   followUser: (id) => request(`/users/${id}/follow`, { method: 'POST' }),
-  getUsers: () => request('/users')
+  unfollowUser: (id) => request(`/users/${id}/follow`, { method: 'DELETE' }),
+  getUsers: () => request('/users'),
+  getUserProfile: (id) => request(`/users/${id}`),
+  getUserPosts: (id) => request(`/users/${id}/posts`),
+  updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) })
 };

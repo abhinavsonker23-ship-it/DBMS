@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 
-export default function RightPanel() {
+export default function RightPanel({ onOpenProfile }) {
   const [users, setUsers] = useState([]);
   const [followingMap, setFollowingMap] = useState({});
 
@@ -23,8 +23,13 @@ export default function RightPanel() {
 
   const handleFollow = async (userId) => {
     try {
-      await api.followUser(userId);
-      setFollowingMap(prev => ({ ...prev, [userId]: true }));
+      if (followingMap[userId]) {
+        await api.unfollowUser(userId);
+        setFollowingMap(prev => ({ ...prev, [userId]: false }));
+      } else {
+        await api.followUser(userId);
+        setFollowingMap(prev => ({ ...prev, [userId]: true }));
+      }
     } catch (err) {
       if (err.message && err.message.includes('Already following')) {
         setFollowingMap(prev => ({ ...prev, [userId]: true }));
@@ -109,12 +114,21 @@ export default function RightPanel() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <img 
                   src={`https://ui-avatars.com/api/?name=${mind.username}&background=random`} 
-                  className="avatar" 
+                  className="avatar avatar-clickable" 
                   style={{ width: '36px', height: '36px', borderRadius: '50%' }} 
                   alt={mind.username} 
+                  onClick={() => onOpenProfile && onOpenProfile(mind.user_id)}
+                  title={`View ${mind.username}'s profile`}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{mind.username}</span>
+                  <span 
+                    className="author-clickable" 
+                    style={{ fontWeight: '600', fontSize: '0.85rem' }}
+                    onClick={() => onOpenProfile && onOpenProfile(mind.user_id)}
+                    title={`View ${mind.username}'s profile`}
+                  >
+                    {mind.username}
+                  </span>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {mind.bio || `@${mind.username}`}
                   </span>

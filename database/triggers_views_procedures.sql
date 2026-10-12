@@ -36,7 +36,7 @@ DELIMITER ;
 -- 8.3 View: User Feed
 CREATE OR REPLACE VIEW user_feed AS
 SELECT f.follower_id AS viewer_id,
-       p.post_id, p.content, p.media_url, p.like_count, p.created_at,
+       p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.created_at,
        u.username AS author,
        u.username AS username
 FROM Follows f

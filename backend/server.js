@@ -84,7 +84,7 @@ app.get('/feed', authenticate, async (req, res) => {
         );
         if (rows.length === 0) {
             [rows] = await pool.query(
-                `SELECT p.post_id, p.content, p.media_url, p.like_count, p.created_at, 
+                `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.created_at, 
                         u.username AS author, u.username
                  FROM Posts p
                  JOIN Users u ON u.user_id = p.user_id
@@ -146,6 +146,20 @@ app.post('/users/:id/follow', authenticate, async (req, res) => {
     }
 });
 
+// 7b. DELETE /users/:id/follow (Unfollow)
+app.delete('/users/:id/follow', authenticate, async (req, res) => {
+    const followingId = req.params.id;
+    try {
+        await pool.query(
+            'DELETE FROM Follows WHERE follower_id = ? AND following_id = ?',
+            [req.user.id, followingId]
+        );
+        res.json({ message: 'User unfollowed' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 8. GET /notifications
 app.get('/notifications', authenticate, async (req, res) => {
     try {
@@ -159,11 +173,102 @@ app.get('/notifications', authenticate, async (req, res) => {
     }
 });
 
-// 9. GET /users
+// 9. GET /users (List all registered users)
 app.get('/users', async (req, res) => {
     try {
         const [rows] = await pool.query(
             'SELECT user_id, username, email, bio, created_at FROM Users ORDER BY user_id ASC'
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 10. PUT /users/profile (Update bio)
+app.put('/users/profile', authenticate, async (req, res) => {
+    const { bio } = req.body;
+    try {
+        await pool.query(
+            'UPDATE Users SET bio = ? WHERE user_id = ?',
+            [bio, req.user.id]
+        );
+        res.json({ message: 'Profile updated successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 11. GET /users/:id (Profile details with stats and mutual followers)
+app.get('/users/:id', async (req, res) => {
+    const targetUserId = parseInt(req.params.id, 10);
+    const viewerId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : null;
+    
+    try {
+        const [users] = await pool.query(
+            'SELECT user_id, username, email, bio, created_at FROM Users WHERE user_id = ?',
+            [targetUserId]
+        );
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = users[0];
+
+        const [[{ followers_count }]] = await pool.query(
+            'SELECT COUNT(*) AS followers_count FROM Follows WHERE following_id = ?',
+            [targetUserId]
+        );
+        const [[{ following_count }]] = await pool.query(
+            'SELECT COUNT(*) AS following_count FROM Follows WHERE follower_id = ?',
+            [targetUserId]
+        );
+        const [[{ posts_count }]] = await pool.query(
+            'SELECT COUNT(*) AS posts_count FROM Posts WHERE user_id = ? AND is_deleted = FALSE',
+            [targetUserId]
+        );
+
+        let is_following = false;
+        let mutual_followers = [];
+
+        if (viewerId && viewerId !== targetUserId) {
+            const [followRows] = await pool.query(
+                'SELECT 1 FROM Follows WHERE follower_id = ? AND following_id = ?',
+                [viewerId, targetUserId]
+            );
+            is_following = followRows.length > 0;
+
+            const [procResults] = await pool.query(
+                'CALL get_mutual_followers(?, ?)',
+                [viewerId, targetUserId]
+            );
+            mutual_followers = (procResults && procResults[0]) ? procResults[0] : [];
+        }
+
+        res.json({
+            ...user,
+            followers_count,
+            following_count,
+            posts_count,
+            is_following,
+            mutual_followers
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 12. GET /users/:id/posts (Posts authored by specific user)
+app.get('/users/:id/posts', async (req, res) => {
+    const targetUserId = parseInt(req.params.id, 10);
+    try {
+        const [rows] = await pool.query(
+            `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.created_at, 
+                    u.username AS author, u.username
+             FROM Posts p
+             JOIN Users u ON u.user_id = p.user_id
+             WHERE p.user_id = ? AND p.is_deleted = FALSE
+             ORDER BY p.created_at DESC`,
+            [targetUserId]
         );
         res.json(rows);
     } catch (err) {

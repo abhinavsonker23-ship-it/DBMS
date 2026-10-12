@@ -1,15 +1,17 @@
 import React from 'react';
-import { Home, Bell, MessageSquare, Bookmark, User, Edit3 } from 'lucide-react';
+import { Home, Bell, MessageSquare, Bookmark, User, Edit3, LogOut } from 'lucide-react';
 
-export default function Sidebar({ activeTab, onLogout, onTabChange }) {
+export default function Sidebar({ activeTab, onLogout, onTabChange, currentUsername }) {
+  const displayName = currentUsername || 'My Profile';
+
   return (
     <aside className="sidebar">
-      <div className="brand">
+      <div className="brand" onClick={() => onTabChange('home')} style={{ cursor: 'pointer' }}>
         <div className="brand-dot"></div>
         Kinetic
       </div>
 
-      <button className="primary" style={{ marginBottom: '2rem', width: '100%' }}>
+      <button className="primary" style={{ marginBottom: '2rem', width: '100%' }} onClick={() => onTabChange('home')}>
         <Edit3 size={18} /> New Post
       </button>
 
@@ -32,17 +34,33 @@ export default function Sidebar({ activeTab, onLogout, onTabChange }) {
         <button className="nav-item">
           <Bookmark size={20} /> Bookmarks
         </button>
-        <button className="nav-item">
+        <button 
+          className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+          onClick={() => onTabChange('profile')}
+        >
           <User size={20} /> Profile
         </button>
       </nav>
 
-      <div className="user-profile-badge" onClick={onLogout}>
-        <img src="https://ui-avatars.com/api/?name=User&background=random" className="avatar" alt="Avatar" />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>Current User</span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Log Out</span>
+      <div 
+        className="user-profile-badge" 
+        onClick={() => onTabChange('profile')}
+        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img src={`https://ui-avatars.com/api/?name=${displayName}&background=random`} className="avatar" alt="Avatar" />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{displayName}</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>View Profile</span>
+          </div>
         </div>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onLogout(); }}
+          style={{ background: 'transparent', padding: '0.4rem', color: 'var(--text-secondary)' }}
+          title="Log Out"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </aside>
   );
