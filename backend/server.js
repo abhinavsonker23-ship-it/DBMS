@@ -78,10 +78,20 @@ app.post('/posts', authenticate, async (req, res) => {
 // 4. GET /feed
 app.get('/feed', authenticate, async (req, res) => {
     try {
-        const [rows] = await pool.query(
+        let [rows] = await pool.query(
             'SELECT * FROM user_feed WHERE viewer_id = ? ORDER BY created_at DESC LIMIT 20',
             [req.user.id]
         );
+        if (rows.length === 0) {
+            [rows] = await pool.query(
+                `SELECT p.post_id, p.content, p.media_url, p.like_count, p.created_at, 
+                        u.username AS author, u.username
+                 FROM Posts p
+                 JOIN Users u ON u.user_id = p.user_id
+                 WHERE p.is_deleted = FALSE
+                 ORDER BY p.created_at DESC LIMIT 20`
+            );
+        }
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -142,6 +152,18 @@ app.get('/notifications', authenticate, async (req, res) => {
         const [rows] = await pool.query(
             'SELECT * FROM Notifications WHERE user_id = ? AND is_read = FALSE ORDER BY created_at DESC',
             [req.user.id]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 9. GET /users
+app.get('/users', async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT user_id, username, email, bio, created_at FROM Users ORDER BY user_id ASC'
         );
         res.json(rows);
     } catch (err) {

@@ -29,5 +29,6 @@ export const api = {
   likePost: (id) => request(`/posts/${id}/like`, { method: 'POST' }),
   unlikePost: (id) => request(`/posts/${id}/like`, { method: 'DELETE' }),
   getNotifications: () => request('/notifications'),
-  followUser: (id) => request(`/users/${id}/follow`, { method: 'POST' })
+  followUser: (id) => request(`/users/${id}/follow`, { method: 'POST' }),
+  getUsers: () => request('/users')
 };

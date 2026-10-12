@@ -44,13 +44,15 @@ export default function Feed({ userId }) {
 
   return (
     <div className="post-list">
-      {posts.map(post => (
+      {posts.map(post => {
+        const authorName = post.username || post.author || 'User';
+        return (
         <div key={post.post_id} className="post-card">
           <div className="post-header">
-            <img src={`https://ui-avatars.com/api/?name=${post.username}&background=random`} className="avatar" alt="Avatar" />
+            <img src={`https://ui-avatars.com/api/?name=${authorName}&background=random`} className="avatar" alt="Avatar" />
             <div className="post-meta">
-              <span className="post-author-name">{post.username} <span style={{ color: 'var(--accent-primary)' }}>&#10003;</span></span>
-              <span className="post-author-handle">@{post.username.toLowerCase().replace(' ', '_')} • {new Date(post.created_at).toLocaleDateString()}</span>
+              <span className="post-author-name">{authorName} <span style={{ color: 'var(--accent-primary)' }}>&#10003;</span></span>
+              <span className="post-author-handle">@{authorName.toLowerCase().replace(/\s+/g, '_')} • {new Date(post.created_at).toLocaleDateString()}</span>
             </div>
             <div style={{ marginLeft: 'auto', color: 'var(--text-secondary)' }}>
               ...
@@ -93,7 +95,8 @@ export default function Feed({ userId }) {
             </div>
           </div>
         </div>
-      ))}
+      );
+    })}
     </div>
   );
 }

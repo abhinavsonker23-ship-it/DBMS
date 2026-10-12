@@ -34,10 +34,11 @@ END$$
 DELIMITER ;
 
 -- 8.3 View: User Feed
-CREATE VIEW user_feed AS
+CREATE OR REPLACE VIEW user_feed AS
 SELECT f.follower_id AS viewer_id,
-       p.post_id, p.content, p.like_count, p.created_at,
-       u.username AS author
+       p.post_id, p.content, p.media_url, p.like_count, p.created_at,
+       u.username AS author,
+       u.username AS username
 FROM Follows f
 JOIN Posts p ON p.user_id = f.following_id
 JOIN Users u ON u.user_id = p.user_id
