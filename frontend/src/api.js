@@ -37,5 +37,10 @@ export const api = {
   getFollowers: (id) => request(`/users/${id}/followers`),
   getFollowing: (id) => request(`/users/${id}/following`),
   markNotificationsRead: () => request('/notifications/mark-read', { method: 'PUT' }),
-  updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) })
+  updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) }),
+  getTop100: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/top100${query ? `?${query}` : ''}`);
+  },
+  getTop100Stats: () => request('/top100/stats')
 };

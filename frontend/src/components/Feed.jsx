@@ -46,14 +46,15 @@ export default function Feed({ userId, onOpenProfile, activeFeedTab = 'for-you',
       return post.user_id !== parseInt(userId, 10);
     }
     const content = (post.content || '').toLowerCase();
+    const tags = Array.isArray(post.tags) ? post.tags : [];
     if (activeFeedTab === 'deep-dives') {
-      return content.includes('#architecture') || content.includes('#performance') || content.includes('#datamodeling') || content.includes('#dbms') || content.includes('mariadb') || content.includes('index') || content.includes('buffer');
+      return content.includes('algorithm') || content.includes('strategy') || content.includes('retention') || content.includes('datamodeling') || tags.some(t => ['Algorithm', 'Strategy', 'Business', 'Retention', 'Digital Transformation'].includes(t));
     }
     if (activeFeedTab === 'tech-design') {
-      return content.includes('#design') || content.includes('#uiux') || content.includes('#creativetech') || content.includes('#frontend') || content.includes('typography') || content.includes('tactile') || content.includes('designsystems');
+      return content.includes('ai') || content.includes('chatgpt') || content.includes('tech') || tags.some(t => ['Artificial Intelligence', 'AI Tools', 'Technology', 'Digitalization', 'Automation'].includes(t));
     }
     if (activeFeedTab === 'essays') {
-      return content.length > 120 || content.includes('#designsystems') || content.includes('#research') || content.includes('paper');
+      return content.length > 200 || (post.line_count && post.line_count > 6) || tags.some(t => ['Mental Health', 'Personal Growth', 'Motivation', 'Family', 'Leadership'].includes(t));
     }
     return true;
   });
@@ -68,12 +69,13 @@ export default function Feed({ userId, onOpenProfile, activeFeedTab = 'for-you',
         filteredPosts.map(post => {
           const authorName = post.username || post.author || 'User';
           const isBookmarked = bookmarkedPostIds.includes(post.post_id);
+          const tags = Array.isArray(post.tags) ? post.tags : [];
 
           return (
             <div key={post.post_id} className="post-card">
               <div className="post-header">
                 <img 
-                  src={`https://ui-avatars.com/api/?name=${authorName}&background=random`} 
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random`} 
                   className="avatar avatar-clickable" 
                   alt="Avatar" 
                   onClick={() => onOpenProfile && onOpenProfile(post.user_id)}
@@ -94,18 +96,49 @@ export default function Feed({ userId, onOpenProfile, activeFeedTab = 'for-you',
                     @{authorName.toLowerCase().replace(/\s+/g, '_')} • {new Date(post.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <div style={{ marginLeft: 'auto', color: 'var(--text-secondary)' }}>
-                  ...
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  {post.language && post.language !== 'English' && (
+                    <span style={{ 
+                      fontSize: '0.68rem', 
+                      padding: '0.15rem 0.45rem', 
+                      borderRadius: '4px',
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      color: '#60a5fa',
+                      border: '1px solid rgba(59, 130, 246, 0.3)'
+                    }}>
+                      {post.language}
+                    </span>
+                  )}
+                  {post.tone && post.tone !== 'General' && (
+                    <span style={{ 
+                      fontSize: '0.68rem', 
+                      padding: '0.15rem 0.45rem', 
+                      borderRadius: '4px',
+                      background: 'rgba(168, 85, 247, 0.15)',
+                      color: '#c084fc',
+                      border: '1px solid rgba(168, 85, 247, 0.3)'
+                    }}>
+                      {post.tone}
+                    </span>
+                  )}
                 </div>
               </div>
               
-              <div className="post-content">
+              <div className="post-content" style={{ whiteSpace: 'pre-wrap' }}>
                 {post.content}
               </div>
 
-              <div className="post-tags">
-                <span className="tag">#KineticSocial</span>
-                <span className="tag">#DBMS</span>
+              <div className="post-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+                {tags.length > 0 ? (
+                  tags.map((tg, i) => (
+                    <span key={i} className="tag">#{tg}</span>
+                  ))
+                ) : (
+                  <>
+                    <span className="tag">#KineticSocial</span>
+                    <span className="tag">#DBMS</span>
+                  </>
+                )}
               </div>
               
               <div className="post-interaction-bar">

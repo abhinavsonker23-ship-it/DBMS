@@ -63,13 +63,27 @@ app.post('/login', async (req, res) => {
 
 // 3. POST /posts
 app.post('/posts', authenticate, async (req, res) => {
-    const { content, media_url } = req.body;
+    const { content, media_url, language = 'English', tone = 'General', tags = [] } = req.body;
     try {
         const [result] = await pool.query(
-            'INSERT INTO Posts (user_id, content, media_url) VALUES (?, ?, ?)',
-            [req.user.id, content, media_url]
+            'INSERT INTO Posts (user_id, content, media_url, language, tone) VALUES (?, ?, ?, ?, ?)',
+            [req.user.id, content, media_url, language, tone]
         );
-        res.status(201).json({ message: 'Post created', postId: result.insertId });
+        const postId = result.insertId;
+
+        if (Array.isArray(tags) && tags.length > 0) {
+            for (const tag of tags) {
+                const trimmed = String(tag).trim();
+                if (!trimmed) continue;
+                await pool.query('INSERT IGNORE INTO Tags (name) VALUES (?)', [trimmed]);
+                const [[tagRow]] = await pool.query('SELECT tag_id FROM Tags WHERE name = ?', [trimmed]);
+                if (tagRow) {
+                    await pool.query('INSERT IGNORE INTO PostTags (post_id, tag_id) VALUES (?, ?)', [postId, tagRow.tag_id]);
+                }
+            }
+        }
+
+        res.status(201).json({ message: 'Post created', postId });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -79,24 +93,43 @@ app.post('/posts', authenticate, async (req, res) => {
 app.get('/feed', authenticate, async (req, res) => {
     try {
         let [rows] = await pool.query(
-            'SELECT * FROM user_feed WHERE viewer_id = ? ORDER BY created_at DESC LIMIT 20',
+            `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.language, p.tone, p.created_at,
+                    u.username AS author, u.username,
+                    GROUP_CONCAT(DISTINCT t.name) AS tags
+             FROM Follows f
+             JOIN Posts p ON p.user_id = f.following_id
+             JOIN Users u ON u.user_id = p.user_id
+             LEFT JOIN PostTags pt ON pt.post_id = p.post_id
+             LEFT JOIN Tags t ON t.tag_id = pt.tag_id
+             WHERE f.follower_id = ? AND p.is_deleted = FALSE
+             GROUP BY p.post_id
+             ORDER BY p.created_at DESC LIMIT 50`,
             [req.user.id]
         );
         if (rows.length === 0) {
             [rows] = await pool.query(
-                `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.created_at, 
-                        u.username AS author, u.username
+                `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.language, p.tone, p.created_at, 
+                        u.username AS author, u.username,
+                        GROUP_CONCAT(DISTINCT t.name) AS tags
                  FROM Posts p
                  JOIN Users u ON u.user_id = p.user_id
+                 LEFT JOIN PostTags pt ON pt.post_id = p.post_id
+                 LEFT JOIN Tags t ON t.tag_id = pt.tag_id
                  WHERE p.is_deleted = FALSE
-                 ORDER BY p.created_at DESC LIMIT 20`
+                 GROUP BY p.post_id
+                 ORDER BY p.created_at DESC LIMIT 50`
             );
         }
-        res.json(rows);
+        const formatted = rows.map(r => ({
+            ...r,
+            tags: r.tags ? r.tags.split(',') : []
+        }));
+        res.json(formatted);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // 5. POST /posts/:id/like
 app.post('/posts/:id/like', authenticate, async (req, res) => {
@@ -280,15 +313,23 @@ app.get('/users/:id/posts', async (req, res) => {
     const targetUserId = parseInt(req.params.id, 10);
     try {
         const [rows] = await pool.query(
-            `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.created_at, 
-                    u.username AS author, u.username
+            `SELECT p.post_id, p.user_id, p.content, p.media_url, p.like_count, p.language, p.tone, p.created_at, 
+                    u.username AS author, u.username,
+                    GROUP_CONCAT(DISTINCT t.name) AS tags
              FROM Posts p
              JOIN Users u ON u.user_id = p.user_id
+             LEFT JOIN PostTags pt ON pt.post_id = p.post_id
+             LEFT JOIN Tags t ON t.tag_id = pt.tag_id
              WHERE p.user_id = ? AND p.is_deleted = FALSE
+             GROUP BY p.post_id
              ORDER BY p.created_at DESC`,
             [targetUserId]
         );
-        res.json(rows);
+        const formatted = rows.map(r => ({
+            ...r,
+            tags: r.tags ? r.tags.split(',') : []
+        }));
+        res.json(formatted);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -330,7 +371,81 @@ app.get('/users/:id/following', async (req, res) => {
     }
 });
 
+// 15. GET /top100 (Global Top 100 Creators Dataset)
+app.get('/top100', async (req, res) => {
+    const { platform, search, sort = 'rank_asc', limit = 100, page = 1 } = req.query;
+    try {
+        let sql = 'SELECT * FROM SocialMediaTop100 WHERE 1=1';
+        const params = [];
+
+        if (platform && platform !== 'All') {
+            sql += ' AND platform = ?';
+            params.push(platform);
+        }
+        if (search) {
+            sql += ' AND profile_name LIKE ?';
+            params.push(`%${search}%`);
+        }
+
+        if (sort === 'followers_desc') {
+            sql += ' ORDER BY followers DESC';
+        } else if (sort === 'posts_desc') {
+            sql += ' ORDER BY posts_count DESC';
+        } else {
+            sql += ' ORDER BY rank_num ASC';
+        }
+
+        const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 500);
+        const offset = ((Math.max(parseInt(page, 10) || 1, 1)) - 1) * parsedLimit;
+        sql += ' LIMIT ? OFFSET ?';
+        params.push(parsedLimit, offset);
+
+        const [rows] = await pool.query(sql, params);
+        
+        let countSql = 'SELECT COUNT(*) as total_count FROM SocialMediaTop100 WHERE 1=1';
+        const countParams = [];
+        if (platform && platform !== 'All') {
+            countSql += ' AND platform = ?';
+            countParams.push(platform);
+        }
+        if (search) {
+            countSql += ' AND profile_name LIKE ?';
+            countParams.push(`%${search}%`);
+        }
+        const [[{ total_count }]] = await pool.query(countSql, countParams);
+
+        res.json({
+            creators: rows,
+            total: total_count,
+            limit: parsedLimit,
+            page: parseInt(page, 10) || 1
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 16. GET /top100/stats (Aggregated statistics per platform)
+app.get('/top100/stats', async (req, res) => {
+    try {
+        const [stats] = await pool.query(`
+            SELECT platform, 
+                   COUNT(*) AS creator_count, 
+                   SUM(followers) AS total_followers, 
+                   ROUND(AVG(followers)) AS avg_followers,
+                   SUM(posts_count) AS total_posts
+            FROM SocialMediaTop100
+            GROUP BY platform
+            ORDER BY total_followers DESC
+        `);
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+

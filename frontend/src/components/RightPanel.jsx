@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import { Trophy } from 'lucide-react';
 
-export default function RightPanel({ onOpenProfile }) {
+export default function RightPanel({ onOpenProfile, onTabChange }) {
   const [users, setUsers] = useState([]);
+  const [topCreators, setTopCreators] = useState([]);
   const [followingMap, setFollowingMap] = useState({});
 
   useEffect(() => {
     loadUsers();
+    loadTopCreators();
   }, []);
+
+  const loadTopCreators = async () => {
+    try {
+      const data = await api.getTop100({ limit: 4 });
+      setTopCreators(data.creators || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -100,6 +112,67 @@ export default function RightPanel({ onOpenProfile }) {
             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>22.4k posts</div>
           </div>
         </div>
+      </div>
+
+      {/* Top Creators Spotlight Widget */}
+      <div className="widget" style={{ border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Trophy size={16} color="#fbbf24" />
+            <h3 className="widget-title" style={{ margin: 0 }}>Top 100 Creators</h3>
+          </div>
+          <span 
+            style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: '600' }} 
+            onClick={() => onTabChange && onTabChange('top100')}
+          >
+            All 500 &rarr;
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {topCreators.map((creator) => (
+            <div 
+              key={creator.id} 
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              onClick={() => onTabChange && onTabChange('top100')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ 
+                  fontSize: '0.72rem', 
+                  fontWeight: '800', 
+                  color: creator.rank_num === 1 ? '#fbbf24' : 'var(--text-secondary)',
+                  width: '20px'
+                }}>
+                  #{creator.rank_num}
+                </span>
+                <img 
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(creator.profile_name)}&background=random`} 
+                  style={{ width: '28px', height: '28px', borderRadius: '50%' }} 
+                  alt={creator.profile_name} 
+                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: '600', fontSize: '0.82rem', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {creator.profile_name}
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
+                    {creator.platform}
+                  </span>
+                </div>
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--accent-primary)' }}>
+                {(creator.followers >= 1e6 ? (creator.followers / 1e6).toFixed(1) + 'M' : creator.followers.toLocaleString())}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <button 
+          className="secondary" 
+          style={{ width: '100%', marginTop: '0.85rem', padding: '0.45rem', fontSize: '0.78rem' }}
+          onClick={() => onTabChange && onTabChange('top100')}
+        >
+          Explore Top 100 Leaderboards
+        </button>
       </div>
 
       <div className="widget">

@@ -467,11 +467,45 @@ export default function Profile({ userId, currentUserId, onBack, onOpenProfile }
                         @{username.toLowerCase().replace(/\s+/g, '_')} • {new Date(post.created_at).toLocaleDateString()}
                       </span>
                     </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {post.language && post.language !== 'English' && (
+                        <span style={{ 
+                          fontSize: '0.68rem', 
+                          padding: '0.15rem 0.45rem', 
+                          borderRadius: '4px',
+                          background: 'rgba(59, 130, 246, 0.15)',
+                          color: '#60a5fa',
+                          border: '1px solid rgba(59, 130, 246, 0.3)'
+                        }}>
+                          {post.language}
+                        </span>
+                      )}
+                      {post.tone && post.tone !== 'General' && (
+                        <span style={{ 
+                          fontSize: '0.68rem', 
+                          padding: '0.15rem 0.45rem', 
+                          borderRadius: '4px',
+                          background: 'rgba(168, 85, 247, 0.15)',
+                          color: '#c084fc',
+                          border: '1px solid rgba(168, 85, 247, 0.3)'
+                        }}>
+                          {post.tone}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="post-content">
+                  <div className="post-content" style={{ whiteSpace: 'pre-wrap' }}>
                     {post.content}
                   </div>
+
+                  {Array.isArray(post.tags) && post.tags.length > 0 && (
+                    <div className="post-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+                      {post.tags.map((tg, i) => (
+                        <span key={i} className="tag">#{tg}</span>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="post-interaction-bar">
                     <button 

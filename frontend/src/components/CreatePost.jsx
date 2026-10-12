@@ -12,7 +12,9 @@ export default function CreatePost({ onPostCreated }) {
     
     setLoading(true);
     try {
-      await api.createPost({ content });
+      // Auto-extract hashtags from text
+      const extractedTags = (content.match(/#[\w-]+/g) || []).map(t => t.replace('#', ''));
+      await api.createPost({ content, tags: extractedTags });
       setContent('');
       onPostCreated();
     } catch (err) {

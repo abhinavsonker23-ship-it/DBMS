@@ -15,6 +15,8 @@ CREATE TABLE Posts (
     content      VARCHAR(2200) NOT NULL,
     media_url    VARCHAR(500),
     like_count   INT DEFAULT 0,
+    language     VARCHAR(50) DEFAULT 'English',
+    tone         VARCHAR(50) DEFAULT 'General',
     is_deleted   BOOLEAN DEFAULT FALSE,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
@@ -57,4 +59,29 @@ CREATE TABLE Notifications (
     is_read          BOOLEAN DEFAULT FALSE,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Tags (
+    tag_id INT AUTO_INCREMENT PRIMARY KEY,
+    name   VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE PostTags (
+    post_id INT NOT NULL,
+    tag_id  INT NOT NULL,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES Posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES Tags(tag_id) ON DELETE CASCADE
+);
+
+CREATE TABLE SocialMediaTop100 (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    rank_num     INT NOT NULL,
+    profile_name VARCHAR(255) NOT NULL,
+    followers    BIGINT NOT NULL,
+    posts_count  INT NOT NULL,
+    platform     VARCHAR(100) NOT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_platform (platform),
+    INDEX idx_followers (followers DESC)
 );
