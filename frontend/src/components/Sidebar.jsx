@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Bell, MessageSquare, Bookmark, User, Edit3, LogOut, Compass, Trophy } from 'lucide-react';
+import { Home, Bell, MessageSquare, Bookmark, User, Edit3, LogOut, Compass } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onLogout, onTabChange, currentUsername }) {
   const displayName = currentUsername || 'My Profile';
@@ -21,12 +21,6 @@ export default function Sidebar({ activeTab, onLogout, onTabChange, currentUsern
           onClick={() => onTabChange('home')}
         >
           <Home size={20} /> Home
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'top100' ? 'active' : ''}`}
-          onClick={() => onTabChange('top100')}
-        >
-          <Trophy size={20} /> Top Creators
         </button>
         <button 
           className={`nav-item ${activeTab === 'communities' ? 'active' : ''}`}

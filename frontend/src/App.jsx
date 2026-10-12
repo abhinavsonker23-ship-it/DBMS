@@ -10,14 +10,13 @@ import Profile from './components/Profile';
 import Communities from './components/Communities';
 import Messages from './components/Messages';
 import Bookmarks from './components/Bookmarks';
-import TopCreators from './components/TopCreators';
 import { api } from './api';
 
 function App() {
   const [view, setView] = useState('landing');
   const [userId, setUserId] = useState(null);
   const [currentUsername, setCurrentUsername] = useState('');
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'top100' | 'communities' | 'notifications' | 'messages' | 'bookmarks' | 'profile'
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'communities' | 'notifications' | 'messages' | 'bookmarks' | 'profile'
   const [activeFeedTab, setActiveFeedTab] = useState('for-you'); // 'for-you' | 'following' | 'deep-dives' | 'tech-design' | 'essays'
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -132,10 +131,6 @@ function App() {
             onBack={handleBackToFeed}
             onOpenProfile={handleOpenProfile}
           />
-        )}
-
-        {activeTab === 'top100' && (
-          <TopCreators onOpenProfile={handleOpenProfile} />
         )}
 
         {activeTab === 'communities' && (

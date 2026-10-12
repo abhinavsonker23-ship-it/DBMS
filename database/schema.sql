@@ -73,15 +73,3 @@ CREATE TABLE PostTags (
     FOREIGN KEY (post_id) REFERENCES Posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES Tags(tag_id) ON DELETE CASCADE
 );
-
-CREATE TABLE SocialMediaTop100 (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    rank_num     INT NOT NULL,
-    profile_name VARCHAR(255) NOT NULL,
-    followers    BIGINT NOT NULL,
-    posts_count  INT NOT NULL,
-    platform     VARCHAR(100) NOT NULL,
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_platform (platform),
-    INDEX idx_followers (followers DESC)
-);

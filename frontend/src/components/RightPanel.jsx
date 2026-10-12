@@ -1,33 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Trophy } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 
-export default function RightPanel({ onOpenProfile, onTabChange }) {
+export default function RightPanel({ onOpenProfile }) {
   const [users, setUsers] = useState([]);
-  const [topCreators, setTopCreators] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
   const [followingMap, setFollowingMap] = useState({});
 
   useEffect(() => {
     loadUsers();
-    loadTopCreators();
-  }, []);
-
-  const loadTopCreators = async () => {
-    try {
-      const data = await api.getTop100({ limit: 4 });
-      setTopCreators(data.creators || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  }, [userSearch]);
 
   const loadUsers = async () => {
     try {
-      const data = await api.getUsers();
+      const data = await api.getUsers({ search: userSearch, limit: 100 });
       const currentUserId = parseInt(localStorage.getItem('userId'), 10);
-      // Filter out self and show top 5 other registered users
-      const others = data.filter(u => u.user_id !== currentUserId).slice(0, 5);
-      setUsers(others);
+      const filtered = data.filter(u => u.user_id !== currentUserId);
+      setTotalCount(filtered.length);
+      // Pick 6 users to display (or filtered if searching)
+      setUsers(userSearch ? filtered.slice(0, 8) : filtered.slice(0, 6));
     } catch (err) {
       console.error(err);
     }
@@ -114,74 +106,48 @@ export default function RightPanel({ onOpenProfile, onTabChange }) {
         </div>
       </div>
 
-      {/* Top Creators Spotlight Widget */}
-      <div className="widget" style={{ border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Trophy size={16} color="#fbbf24" />
-            <h3 className="widget-title" style={{ margin: 0 }}>Top 100 Creators</h3>
-          </div>
+      {/* Registered Minds Widget */}
+      <div className="widget">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <h3 className="widget-title" style={{ margin: 0 }}>Registered Minds ({totalCount || users.length})</h3>
           <span 
-            style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: '600' }} 
-            onClick={() => onTabChange && onTabChange('top100')}
+            style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem' }} 
+            onClick={loadUsers}
+            title="Refresh users list"
           >
-            All 500 &rarr;
+            <RefreshCw size={12} /> Shuffle
           </span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {topCreators.map((creator) => (
-            <div 
-              key={creator.id} 
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-              onClick={() => onTabChange && onTabChange('top100')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ 
-                  fontSize: '0.72rem', 
-                  fontWeight: '800', 
-                  color: creator.rank_num === 1 ? '#fbbf24' : 'var(--text-secondary)',
-                  width: '20px'
-                }}>
-                  #{creator.rank_num}
-                </span>
-                <img 
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(creator.profile_name)}&background=random`} 
-                  style={{ width: '28px', height: '28px', borderRadius: '50%' }} 
-                  alt={creator.profile_name} 
-                />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: '600', fontSize: '0.82rem', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {creator.profile_name}
-                  </span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
-                    {creator.platform}
-                  </span>
-                </div>
-              </div>
-              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--accent-primary)' }}>
-                {(creator.followers >= 1e6 ? (creator.followers / 1e6).toFixed(1) + 'M' : creator.followers.toLocaleString())}
-              </span>
-            </div>
-          ))}
+        {/* Quick User Search */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.4rem', 
+          background: 'var(--bg-card)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '6px',
+          padding: '0.35rem 0.6rem',
+          marginBottom: '0.85rem'
+        }}>
+          <Search size={14} color="var(--text-secondary)" />
+          <input 
+            type="text" 
+            placeholder="Search 500+ creators..." 
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: 'var(--text-primary)', 
+              outline: 'none', 
+              width: '100%',
+              fontSize: '0.78rem'
+            }}
+          />
         </div>
 
-        <button 
-          className="secondary" 
-          style={{ width: '100%', marginTop: '0.85rem', padding: '0.45rem', fontSize: '0.78rem' }}
-          onClick={() => onTabChange && onTabChange('top100')}
-        >
-          Explore Top 100 Leaderboards
-        </button>
-      </div>
-
-      <div className="widget">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 className="widget-title" style={{ margin: 0 }}>Registered Minds ({users.length})</h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: '600' }} onClick={loadUsers}>Refresh</span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {users.map((mind) => (
             <div key={mind.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -31,16 +31,14 @@ export const api = {
   getNotifications: () => request('/notifications'),
   followUser: (id) => request(`/users/${id}/follow`, { method: 'POST' }),
   unfollowUser: (id) => request(`/users/${id}/follow`, { method: 'DELETE' }),
-  getUsers: () => request('/users'),
+  getUsers: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/users${query ? `?${query}` : ''}`);
+  },
   getUserProfile: (id) => request(`/users/${id}`),
   getUserPosts: (id) => request(`/users/${id}/posts`),
   getFollowers: (id) => request(`/users/${id}/followers`),
   getFollowing: (id) => request(`/users/${id}/following`),
   markNotificationsRead: () => request('/notifications/mark-read', { method: 'PUT' }),
-  updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) }),
-  getTop100: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return request(`/top100${query ? `?${query}` : ''}`);
-  },
-  getTop100Stats: () => request('/top100/stats')
+  updateBio: (bio) => request('/users/profile', { method: 'PUT', body: JSON.stringify({ bio }) })
 };

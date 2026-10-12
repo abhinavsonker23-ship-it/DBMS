@@ -224,12 +224,20 @@ app.put('/notifications/mark-read', authenticate, async (req, res) => {
     }
 });
 
-// 9. GET /users (List all registered users)
+// 9. GET /users (List all registered users with optional search & pagination)
 app.get('/users', async (req, res) => {
+    const { search, limit = 100 } = req.query;
     try {
-        const [rows] = await pool.query(
-            'SELECT user_id, username, email, bio, created_at FROM Users ORDER BY user_id ASC'
-        );
+        let sql = 'SELECT user_id, username, email, bio, created_at FROM Users WHERE 1=1';
+        const params = [];
+        if (search) {
+            sql += ' AND (username LIKE ? OR bio LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        sql += ' ORDER BY user_id ASC LIMIT ?';
+        params.push(Math.min(parseInt(limit, 10) || 100, 600));
+
+        const [rows] = await pool.query(sql, params);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -371,81 +379,9 @@ app.get('/users/:id/following', async (req, res) => {
     }
 });
 
-// 15. GET /top100 (Global Top 100 Creators Dataset)
-app.get('/top100', async (req, res) => {
-    const { platform, search, sort = 'rank_asc', limit = 100, page = 1 } = req.query;
-    try {
-        let sql = 'SELECT * FROM SocialMediaTop100 WHERE 1=1';
-        const params = [];
-
-        if (platform && platform !== 'All') {
-            sql += ' AND platform = ?';
-            params.push(platform);
-        }
-        if (search) {
-            sql += ' AND profile_name LIKE ?';
-            params.push(`%${search}%`);
-        }
-
-        if (sort === 'followers_desc') {
-            sql += ' ORDER BY followers DESC';
-        } else if (sort === 'posts_desc') {
-            sql += ' ORDER BY posts_count DESC';
-        } else {
-            sql += ' ORDER BY rank_num ASC';
-        }
-
-        const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 500);
-        const offset = ((Math.max(parseInt(page, 10) || 1, 1)) - 1) * parsedLimit;
-        sql += ' LIMIT ? OFFSET ?';
-        params.push(parsedLimit, offset);
-
-        const [rows] = await pool.query(sql, params);
-        
-        let countSql = 'SELECT COUNT(*) as total_count FROM SocialMediaTop100 WHERE 1=1';
-        const countParams = [];
-        if (platform && platform !== 'All') {
-            countSql += ' AND platform = ?';
-            countParams.push(platform);
-        }
-        if (search) {
-            countSql += ' AND profile_name LIKE ?';
-            countParams.push(`%${search}%`);
-        }
-        const [[{ total_count }]] = await pool.query(countSql, countParams);
-
-        res.json({
-            creators: rows,
-            total: total_count,
-            limit: parsedLimit,
-            page: parseInt(page, 10) || 1
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 16. GET /top100/stats (Aggregated statistics per platform)
-app.get('/top100/stats', async (req, res) => {
-    try {
-        const [stats] = await pool.query(`
-            SELECT platform, 
-                   COUNT(*) AS creator_count, 
-                   SUM(followers) AS total_followers, 
-                   ROUND(AVG(followers)) AS avg_followers,
-                   SUM(posts_count) AS total_posts
-            FROM SocialMediaTop100
-            GROUP BY platform
-            ORDER BY total_followers DESC
-        `);
-        res.json(stats);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
 
